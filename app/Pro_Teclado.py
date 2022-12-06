@@ -307,9 +307,9 @@ def Accion_Torniquete (Res):
 
 
 def Get_Teclas(Canal):
-    if Canal == 0 :   Pal=    Get_File(COM_NFC)
-    if Canal == 1 :   Pal=    Get_File(COM_NFC_S1)
-    if Canal == 2 :   Pal=    Get_File(COM_NFC_S2)
+    if Canal == 0 :   Pal=    Get_File(COM_TECLADO)
+    if Canal == 1 :   Pal=    Get_File(COM_TECLADO_S1)
+    if Canal == 2 :   Pal=    Get_File(COM_TECLADO_S2)
     Pal=Pal.rstrip('\n')
     Pal=Pal.rstrip('\r')
     return Pal
