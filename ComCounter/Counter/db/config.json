@@ -1,10 +1,9 @@
 {
-  "just_self_hosted": "False",
   "server_update_time": 5,
   "save_logs": "False",
   "scanners_port": 1234,
   "start_up_time": 5,
   "local_server_port": 8081,
-  "counter_user": "recepcion@fusepong.com",
+  "counter_user": "counter@mail.com",
   "counter_password": "password"
 }
