@@ -802,7 +802,6 @@ if __name__ == "__main__":
             if not exisṭ_other_connection:
                 ips = subprocess.getstatusoutput('hostname -I')
                 if ips[0] == 0 or start_up_time != 0:
-                    print(start_up_time)
                     await_time = 0
                     if start_up_time == 0:
                         try:
@@ -844,6 +843,8 @@ if __name__ == "__main__":
                             df.close()
                             last_log_data = last_log_text.split("\n")
                         with open(LAST_LOGIN_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
+                            if len(last_log_data) < 2:
+                                last_log_data.append("")
                             last_log_data[0] = last_log_data[0]
                             last_log_data[1] = bookingOffice_id
                             dfw.write("\n".join(last_log_data))
