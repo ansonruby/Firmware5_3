@@ -129,8 +129,13 @@ class WsEvents(Websocket):
                                     with open(RECIVED_FLAG_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
                                         dfw.write("")
                                         dfw.close()
-                                    self.broadcast(json.dumps(
-                                        {'type': 'authTicket', 'status': '1'})+'////\n'+"\n".join(data))
+                                    if len(header) < 5:
+                                        self.broadcast(json.dumps(
+                                            {'type': 'authTicket', 'status': '1'})+'////\n'+"\n".join(data))
+                                    else:
+                                        self.broadcast(json.dumps(
+                                            {'type': 'authTicket', 'status': '1', 'direction': header[4]})+'////\n'+"\n".join(data))
+
                                     ticketsPack = ""
                                 elif(header[1] == "buttonExit"):
                                     self.broadcast(json.dumps(

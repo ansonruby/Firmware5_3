@@ -44,7 +44,7 @@ from lib.Fun_Tipo_QR import *   #
 #-------------------------------------------------------
 # inicio de variable	--------------------------------------
 
-PP_Mensajes = 0     # 0: NO print  1: Print
+PP_Mensajes = 1     # 0: NO print  1: Print
 
 
 #-------------------------------------------------------------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ def Decision_General(Canal):
     # ---------------------------------------------------------
     elif  Prioridad == '1':
         if PP_Mensajes: print 'Prioridad Counter -> Dispo'
-        Status_Peticion_Counter = Decision_Counter(R_Q,T_A)
+        Status_Peticion_Counter = Decision_Counter(R_Q,T_A,Canal)
         if Status_Peticion_Counter != -2:
             if Status_Peticion_Counter == -1: # Error en el counter
                 Status_Peticion_Dispo = Decision_Dispositivo(R_Q,T_A)
@@ -296,7 +296,7 @@ def Decision_Server(QR, Tiempo_Actual):
 #---------------------------------------------------------
 #----       Ruta para que autorise el counter
 #---------------------------------------------------------
-def Decision_Counter(QR, Tiempo_Actual):
+def Decision_Counter(QR, Tiempo_Actual,Canal):
     global PP_Mensajes
 
     if PP_Mensajes: print 'Autorisa el counter'
@@ -304,10 +304,10 @@ def Decision_Counter(QR, Tiempo_Actual):
     Validacion, QR = Validar_QR(QR)              # Valido y que tipo es?
     if PP_Mensajes: print 'Tipo QR:' + Validacion
 
-
+    Direccion_Tiempo = str(Tiempo_Actual) + '.' + str(Canal)
     #------------------------------------------------------------------------------------------------------------
     if  Validacion == 'T1': #falta enviar al counter
-        Respuesta, conteo = Enviar_QR_Counter(QR, Tiempo_Actual)
+        Respuesta, conteo = Enviar_QR_Counter(QR, Direccion_Tiempo)
         if PP_Mensajes: print 'Respuesta: ' + str(Respuesta)
         if "Access granted" in Respuesta:                           # Entradas/Salidas Autorizadas
             Accion_Torniquete (Respuesta)
@@ -325,7 +325,7 @@ def Decision_Counter(QR, Tiempo_Actual):
             return -1
     #------------------------------------------------------------------------------------------------------------
     if  Validacion == 'T2': #falta enviar al counter
-        Respuesta, conteo = Enviar_QR_Counter(QR, Tiempo_Actual)
+        Respuesta, conteo = Enviar_QR_Counter(QR, Direccion_Tiempo)
         if PP_Mensajes: print 'Respuesta: ' + str(Respuesta)
         if "Access granted" in Respuesta:                           # Entradas/Salidas Autorizadas
             Accion_Torniquete (Respuesta)
@@ -343,7 +343,7 @@ def Decision_Counter(QR, Tiempo_Actual):
             return -1
     #------------------------------------------------------------------------------------------------------------
     if  Validacion == 'T2_1': #falta enviar al counter
-        Respuesta, conteo = Enviar_QR_Counter(QR, Tiempo_Actual)
+        Respuesta, conteo = Enviar_QR_Counter(QR, Direccion_Tiempo)
         if PP_Mensajes: print 'Respuesta: ' + str(Respuesta)
         if "Access granted" in Respuesta:                           # Entradas/Salidas Autorizadas
             Accion_Torniquete (Respuesta)
@@ -362,7 +362,7 @@ def Decision_Counter(QR, Tiempo_Actual):
     #------------------------------------------------------------------------------------------------------------
     if  Validacion == 'T3': #falta enviar al counter
         if Ventana_tiempo_Tipo_3(QR, Tiempo_Actual) == 1:
-            Respuesta, conteo = Enviar_QR_Counter(QR, Tiempo_Actual)
+            Respuesta, conteo = Enviar_QR_Counter(QR, Direccion_Tiempo)
             if PP_Mensajes: print 'Respuesta: ' + str(Respuesta)
             if "Access granted" in Respuesta:                           # Entradas/Salidas Autorizadas
                 if conteo != "-1":

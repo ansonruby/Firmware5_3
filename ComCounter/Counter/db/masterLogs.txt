@@ -1,0 +1,5 @@
+Counter master logs
+Fecha: 2022-12-07
+[Master]:Serving data in 0.0.0.08081
+[Socket from ws://0.0.0.0:1234/ to Master]:{"type": "update", "status": "1"}
+[Master to ws://0.0.0.0:1234/]:{"type": "updateDevice", "size": [44, 0], "status": "1"}//// 'new line' 12Fu07se2022pong

@@ -107,7 +107,7 @@ def Decision_General(Canal):
     # ---------------------------------------------------------
     elif  Prioridad == '1':
         if PN_Mensajes: print 'Prioridad Counter -> Dispo'
-        Status_Peticion_Counter = Decision_Counter(R_NFC,T_A)
+        Status_Peticion_Counter = Decision_Counter(R_NFC,T_A,Canal)
         if Status_Peticion_Counter != -2:
             if Status_Peticion_Counter == -1: # Error en el counter
                 Status_Peticion_Dispo = Decision_Dispositivo(R_NFC,T_A)
@@ -245,7 +245,7 @@ def Decision_NFC_Usuarios(ID):
 #---------------------------------------------------------
 #----       Ruta para que autorise el counter
 #---------------------------------------------------------
-def Decision_Counter(NFC, Tiempo_Actual):
+def Decision_Counter(NFC, Tiempo_Actual,Canal):
     global PN_Mensajes
 
     if PN_Mensajes: print 'Autorisa el counter'
@@ -256,10 +256,10 @@ def Decision_Counter(NFC, Tiempo_Actual):
     if PN_Mensajes: print 'MD5: '+ NFC_Md5
 
 
-
+    Direccion_Tiempo = str(Tiempo_Actual) + '.' + str(Canal)
     #------------------------------------------------------------------------------------------------------------
 
-    Respuesta, conteo = Enviar_NFC_Counter('6.'+ NFC_Md5, Tiempo_Actual)
+    Respuesta, conteo = Enviar_NFC_Counter('6.'+ NFC_Md5, Direccion_Tiempo)
     if PN_Mensajes: print 'Respuesta: ' + str(Respuesta)
 
 

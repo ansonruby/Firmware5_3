@@ -101,7 +101,7 @@ def Decision_General(Canal):
     # ---------------------------------------------------------
     elif  Prioridad == '1':
         if PT_Mensajes: print 'Prioridad Counter -> Dispo'
-        Status_Peticion_Counter = Decision_Counter(R_Teclas,T_A)
+        Status_Peticion_Counter = Decision_Counter(R_Teclas,T_A,Canal)
         if Status_Peticion_Counter != -2:
             if Status_Peticion_Counter == -1: # Error en el counter
                 Status_Peticion_Dispo = Decision_Dispositivo(R_Teclas,T_A)
@@ -170,9 +170,11 @@ def Decision_Server(Teclado, Tiempo_Actual):
 #---------------------------------------------------------
 #----       Ruta para que autorise el counter
 #---------------------------------------------------------
-def Decision_Counter(TECLADO, Tiempo_Actual):
+def Decision_Counter(TECLADO, Tiempo_Actual,Canal):
     TCL_ENCR=MD5(TECLADO)
-    Respuesta, conteo = Enviar_QR_Counter("."+TCL_ENCR, Tiempo_Actual)
+    Direccion_Tiempo = str(Tiempo_Actual) + '.' + str(Canal)
+
+    Respuesta, conteo = Enviar_QR_Counter("."+TCL_ENCR, Direccion_Tiempo)
     if PT_Mensajes: print 'Respuesta: ' + str(Respuesta)
     if "Access granted" in Respuesta:                           # Entradas/Salidas Autorizadas
         Accion_Torniquete (Respuesta)

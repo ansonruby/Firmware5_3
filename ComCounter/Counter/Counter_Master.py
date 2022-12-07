@@ -247,7 +247,7 @@ def save_users(data):
     return granted_users
 
 
-def auth_petition(qr, ws):
+def auth_petition(qr, ws, direction="0"):
     qr_list = []
     data = qr.split(".")
     ans = False
@@ -316,7 +316,7 @@ def auth_petition(qr, ws):
     if ans == True:
         with open(AUTH_LIST_PATH, 'a', encoding='utf-8', errors='replace') as dfw:
             dfw.write(qr+"."+str(int(time.time()*1000.0)) +
-                      "."+access_identifier+".0.1."+str(ws.server_id)+"\n")
+                      "."+access_identifier+"."+direction+".1."+str(ws.server_id)+"\n")
             dfw.close()
     return ans
 
@@ -555,7 +555,6 @@ def socket_on_open(ws):
 
 
 def socket_on_message(ws, msg):
-
     try:
         msg = msg.strip()
         print_logs("[Socket from "+str(ws.url)+" to Master]:"+str(msg))
@@ -574,8 +573,9 @@ def socket_on_message(ws, msg):
         else:
             if header["type"] == "authTicket":
                 access = ""
-                if auth_petition(req[1], ws) == True:
-                    access = "Access granted-E.0"
+                direction = "0" if not "direction" in header else header["direction"]
+                if auth_petition(req[1], ws, direction) == True:
+                    access = "Access granted-E.0" if direction == "0" else "Access granted-S.0"
                 else:
                     access = "Access denied.-1"
                 ans = json.dumps(
