@@ -5,4 +5,4 @@
 # (modificar solo para nuevos o cambios de firmware)
 #-------------------------------------------------------------
 # 0)se agrego tres seriales para controlar tres rs485 por usb
-# 
+#

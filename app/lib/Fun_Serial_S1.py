@@ -349,7 +349,7 @@ def Decision_Tag(Tag):
 
         else:
             #Set_File(COM_BUZZER,'1')       #sonido eliminar si no es necesario
-            if SQ_Mensajes: print 'Repetido'
+            if FS_Mensajes: print 'Repetido'
             #Set_File(STATUS_REPEAT_QR, '2')    # Estado QR repetido
 
 

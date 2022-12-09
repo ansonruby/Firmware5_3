@@ -932,59 +932,64 @@ def Enviar_QR_Tipo3_Counter(QR, Tiempo_Actual):
 
 def Enviar_QR_Counter(QR, Tiempo_Actual):
     global FTQ_Mensajes
-    if Get_File(CONT_SEND_FLAG_PATH) == "":
-        Heder = 'header.authTicket.1.'+Tiempo_Actual+'\n'
-        Dato_TX = QR + '\n'
-        Total_TX = Heder + Dato_TX
-        # print Total_TX
-        Set_File(CONT_SEND_DATA_PATH, Total_TX)  # enviar el QR
-        Set_File(CONT_SEND_FLAG_PATH, '1')
-        T_E = T_Antes = -1
-        while 1:
-            if Get_File(CONT_RECEIVED_FLAG_PATH) == "1":
-                if FTQ_Mensajes:    print 'Respuesta :'
-                Resp = Get_File(CONT_RECEIVED_DATA_PATH)
-                Resps = Resp.split("\n")
+    Flag_Revision_Time=int(time.time()*1000.0)
+    Await_time=0.001
+    while 1:
+        time.sleep(Await_time)
+        if Get_File(CONT_SEND_FLAG_PATH) == "":
+            Heder = 'header.authTicket.1.'+Tiempo_Actual+'\n'
+            Dato_TX = QR + '\n'
+            Total_TX = Heder + Dato_TX
+            # print Total_TX
+            Set_File(CONT_SEND_DATA_PATH, Total_TX)  # enviar el QR
+            Set_File(CONT_SEND_FLAG_PATH, '1')
+            T_E = T_Antes = -1
+            while 1:
+                time.sleep(Await_time)
+                if Get_File(CONT_RECEIVED_FLAG_PATH) == "1":
+                    if FTQ_Mensajes:    print 'Respuesta :'
+                    Resp = Get_File(CONT_RECEIVED_DATA_PATH)
+                    Resps = Resp.split("\n")
 
-                # print Resps[0]
-                # print Resps[1]
-                if len(Resps) > 1:
-                    Heder_res = Resps[0].split('.')
-                    Accion_res = Resps[1].split('.')
-                    # print Heder_res[1]
-                    # print Accion_res[0]
+                    # print Resps[0]
+                    # print Resps[1]
+                    if len(Resps) > 1:
+                        Heder_res = Resps[0].split('.')
+                        Accion_res = Resps[1].split('.')
+                        # print Heder_res[1]
+                        # print Accion_res[0]
 
-                    if Heder_res[1] == 'authTicket':
-                        if FTQ_Mensajes:
-                            print 'Tipo: ' + Accion_res[0]
-                            print 'Contador:' + Accion_res[1]
+                        if Heder_res[1] == 'authTicket':
+                            if FTQ_Mensajes:
+                                print 'Tipo: ' + Accion_res[0]
+                                print 'Contador:' + Accion_res[1]
 
-                        Clear_File(CONT_RECEIVED_DATA_PATH)
-                        Clear_File(CONT_RECEIVED_FLAG_PATH)
-                        return Accion_res[0], Accion_res[1]
+                            Clear_File(CONT_RECEIVED_DATA_PATH)
+                            Clear_File(CONT_RECEIVED_FLAG_PATH)
+                            return Accion_res[0], Accion_res[1]
 
-                    else:
-                        if FTQ_Mensajes:
-                            print 'Es otra comunicacion'
+                        else:
+                            if FTQ_Mensajes:
+                                print 'Es otra comunicacion'
 
-            if T_Antes == -1:
-                T_E = int(time.time()*1000.0)  # Tiempo
-                T_Antes = T_E
-            else:
-                T_E = int(time.time()*1000.0)  # Tiempo
-            Tiempo_diferencia = T_E - T_Antes
-            # print str(Tiempo_diferencia)
-            if Tiempo_diferencia >= 2000:
-                if FTQ_Mensajes:    print 'procesar por no respuesta T:' + str(Tiempo_diferencia)
-                Clear_File(CONT_SEND_DATA_PATH)
-                Clear_File(CONT_SEND_FLAG_PATH)
-                Clear_File(CONT_RECEIVED_DATA_PATH)
-                Clear_File(CONT_RECEIVED_FLAG_PATH)
-                return 'Error',"-1"
-
-    else:
-        if FTQ_Mensajes:    print 'Error en la comunicacion : Flag No vacio'
-        return 'Error',"-1"
+                if T_Antes == -1:
+                    T_E = int(time.time()*1000.0)  # Tiempo
+                    T_Antes = T_E
+                else:
+                    T_E = int(time.time()*1000.0)  # Tiempo
+                Tiempo_diferencia = T_E - T_Antes
+                # print str(Tiempo_diferencia)
+                if Tiempo_diferencia >= 2000:
+                    if FTQ_Mensajes:    print 'procesar por no respuesta T:' + str(Tiempo_diferencia)
+                    Clear_File(CONT_SEND_DATA_PATH)
+                    Clear_File(CONT_SEND_FLAG_PATH)
+                    Clear_File(CONT_RECEIVED_DATA_PATH)
+                    Clear_File(CONT_RECEIVED_FLAG_PATH)
+                    return 'Error',"-1"
+        if int(time.time()*1000.0)-Flag_Revision_Time > 1000:
+            break
+    if FTQ_Mensajes:    print 'Error en la comunicacion : Flag No vacio'
+    return 'Error',"-1"
 #---------------------------------------------------------
 def Enviar_Autorizado_Counter(Dato):
     Prioridad = Get_File(CONF_AUTORIZACION_QR)

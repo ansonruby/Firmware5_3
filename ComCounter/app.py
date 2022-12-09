@@ -11,7 +11,7 @@ SERVER_PORT = 8090
 AWAIT_TIME = 0.2
 AWAIT_PACKAGE_TIME = 0.02
 MAX_PACKAGE_BYTES_SIZE = 6000
-AWAIT_TIME_FROM_LAST_MESSAGE = 3
+AWAIT_TIME_FROM_LAST_MESSAGE = 2
 SHOW_PRINT_MSG = False
 
 DB_DIR_NAME = os.path.dirname(os.path.realpath(__file__))+"/db"
@@ -202,7 +202,6 @@ class WsEvents(Websocket):
                         break
                     else:
                         time.sleep(self.SERVER_AWAIT_TIME)
-                break
             with open(RECIVED_FLAG_PATH, 'w', encoding='utf-8', errors='replace') as ffw:
                 ffw.write(headerJson["status"])
                 ffw.close()
@@ -221,7 +220,6 @@ class WsEvents(Websocket):
                         break
                     else:
                         time.sleep(self.SERVER_AWAIT_TIME)
-                break
         else:
             pass
         self.LAST_MESSAGE_TIME = int(time.time())

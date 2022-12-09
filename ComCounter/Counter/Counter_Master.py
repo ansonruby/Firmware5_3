@@ -17,6 +17,7 @@ import datetime
 import subprocess
 import ast
 
+
 CURRENT_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 # Cloud server constants
@@ -31,6 +32,7 @@ DEVICE_CURRENT_UUID = uuid.uuid1()
 # Internal db constants
 DB_DIR_NAME = CURRENT_DIR_PATH+"/db"
 QR_LIST_PATH = DB_DIR_NAME+"/data.txt"
+QR_LIST_UPDATED_PATH = DB_DIR_NAME+"/data_updated.txt"
 AUTH_LIST_PATH = DB_DIR_NAME+"/auth.txt"
 OFFLINE_LIST_PATH = DB_DIR_NAME+"/offline.txt"
 LAST_LOGIN_LIST_PATH = DB_DIR_NAME+"/lastLog.txt"
@@ -219,7 +221,7 @@ def save_users(data):
     granted_users = []
     granted_users.extend(data["data"])
     granted_users.extend(data["invitations"])
-    with open(QR_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
+    with open(QR_LIST_UPDATED_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
         dfw.write("\n".join(granted_users)+"\n")
         dfw.close()
 
@@ -235,169 +237,195 @@ def save_users(data):
 
     for ticket in offline_list:
         if ticket.strip() != "":
-            create_ticket(json.loads(ticket), False)
+            create_ticket(json.loads(ticket), False, True)
 
     for ticket in data["tickets"]:
-        create_ticket(ticket)
+        create_ticket(ticket, True, True)
 
+    qr_list = ""
+    qr_list_updated = ""
     with open(QR_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
         qr_list = df.read().strip()
         df.close()
-        granted_users = qr_list.split("\n")
-    return granted_users
+    with open(QR_LIST_UPDATED_PATH, 'r', encoding='utf-8', errors='replace') as df:
+        qr_list_updated = df.read().strip()
+        df.close()
+    # Compare if the db and updated db has diferent
+    if int(hashlib.sha256(qr_list.encode('utf-8')).hexdigest(), 16) % 10**8 != int(hashlib.sha256(qr_list_updated.encode('utf-8')).hexdigest(), 16) % 10**8:
+        os.rename(QR_LIST_PATH, QR_LIST_PATH+".bk")
+        os.rename(QR_LIST_UPDATED_PATH, QR_LIST_PATH)
+        os.remove(QR_LIST_PATH+".bk")
+        open(QR_LIST_UPDATED_PATH, 'w', encoding='utf-8',
+             errors='replace').close()
+        return True
+    else:
+        with open(QR_LIST_UPDATED_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
+            dfw.write("")
+            dfw.close()
+    return False
 
 
 def auth_petition(qr, ws, direction="0"):
-    qr_list = []
-    data = qr.split(".")
-    ans = False
-    access_identifier = "1"
-    with open(QR_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
-        qr_list_text = df.read().strip()
-        df.close()
-        qr_list = qr_list_text.split("\n")
-    for compare_qr in qr_list:
-        if compare_qr == "":
-            continue
-        compare_data = compare_qr.split(".")
-        if compare_data[0] == "6" and data[0] == "6" and compare_data[2] == data[1]:
-            ans = True
-            if len(compare_data) > 3:
-                access_identifier = compare_data[3]
-                qr = compare_qr
-            else:
-                access_identifier = "11"
-                qr = compare_qr+".11"
-            break
-        elif len(data) == 2 and len(compare_data) == 2 and data[1] == compare_data[0]:
-            access_identifier = "1"
-            ans = True
-            break
-        elif len(data) == 2 and len(compare_data) == 2 and data[0] == "" and data[1] == compare_data[1]:
-            qr = "."+compare_data[0]
-            access_identifier = "2"
-            ans = True
-            break
-        elif len(data) == 5 and len(compare_data) == 5 and compare_data[0] == "3" and data[0] == "3" and ".".join(data[0:-1]) == ".".join(compare_data[0:-1]):
-            access_identifier = "1"
-            offline_list = []
-            with open(OFFLINE_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
-                offline_list_text = df.read().strip()
-                df.close()
-                if offline_list_text.strip() != "":
-                    offline_list = offline_list_text.split("\n")
-            for existent_ticket_text in offline_list:
-                if existent_ticket_text.strip() == "":
-                    continue
-                existent_ticket = json.loads(existent_ticket_text)
-                if existent_ticket["qr"] == compare_qr:
-                    if int(existent_ticket["uses"]) > 1:
-                        existent_ticket["uses"] = str(
-                            int(existent_ticket["uses"])-1)
-                        offline_position = offline_list.index(
-                            existent_ticket_text)
-                        existent_ticket_text = json.dumps(existent_ticket)
-                        offline_list[offline_position] = existent_ticket_text
-                    else:
-                        offline_list.remove(existent_ticket_text)
-                    break
-            with open(OFFLINE_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
-                dfw.write("\n".join(offline_list))
+    try:
+        qr_list = []
+        data = qr.split(".")
+        ans = False
+        access_identifier = "1"
+        with open(QR_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
+            qr_list_text = df.read().strip()
+            df.close()
+            qr_list = qr_list_text.split("\n")
+        for compare_qr in qr_list:
+            if compare_qr == "":
+                continue
+            compare_data = compare_qr.split(".")
+            if compare_data[0] == "6" and data[0] == "6" and compare_data[2] == data[1]:
+                ans = True
+                if len(compare_data) > 3:
+                    access_identifier = compare_data[3]
+                    qr = compare_qr
+                else:
+                    access_identifier = "11"
+                    qr = compare_qr+".11"
+                break
+            elif len(data) == 2 and len(compare_data) == 2 and data[1] == compare_data[0]:
+                access_identifier = "1"
+                ans = True
+                break
+            elif len(data) == 2 and len(compare_data) == 2 and data[0] == "" and data[1] == compare_data[1]:
+                qr = "."+compare_data[0]
+                access_identifier = "2"
+                ans = True
+                break
+            elif len(data) == 5 and len(compare_data) == 5 and compare_data[0] == "3" and data[0] == "3" and ".".join(data[0:-1]) == ".".join(compare_data[0:-1]):
+                access_identifier = "1"
+                offline_list = []
+                with open(OFFLINE_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
+                    offline_list_text = df.read().strip()
+                    df.close()
+                    if offline_list_text.strip() != "":
+                        offline_list = offline_list_text.split("\n")
+                for existent_ticket_text in offline_list:
+                    if existent_ticket_text.strip() == "":
+                        continue
+                    existent_ticket = json.loads(existent_ticket_text)
+                    if existent_ticket["qr"] == compare_qr:
+                        if int(existent_ticket["uses"]) > 1:
+                            existent_ticket["uses"] = str(
+                                int(existent_ticket["uses"])-1)
+                            offline_position = offline_list.index(
+                                existent_ticket_text)
+                            existent_ticket_text = json.dumps(existent_ticket)
+                            offline_list[offline_position] = existent_ticket_text
+                        else:
+                            offline_list.remove(existent_ticket_text)
+                        break
+                with open(OFFLINE_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
+                    dfw.write("\n".join(offline_list))
+                    dfw.close()
+                qr_list.remove(compare_qr)
+                ans = True
+                with open(QR_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
+                    dfw.write("\n".join(qr_list))
+                    dfw.close()
+                break
+            elif len(data) == 5 and len(compare_data) == 5 and compare_data[0] == "4" and ".".join(data[1:]) == ".".join(compare_data[1:]):
+                ans = True
+                break
+        if ans == True:
+            with open(AUTH_LIST_PATH, 'a', encoding='utf-8', errors='replace') as dfw:
+                dfw.write(qr+"."+str(int(time.time()*1000.0)) +
+                          "."+access_identifier+"."+direction+".1."+str(ws.server_id)+"\n")
                 dfw.close()
-            qr_list.remove(compare_qr)
-            ans = True
-            with open(QR_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
-                dfw.write("\n".join(qr_list))
-                dfw.close()
-            break
-        elif len(data) == 5 and len(compare_data) == 5 and compare_data[0] == "4" and ".".join(data[1:]) == ".".join(compare_data[1:]):
-            ans = True
-            break
-    if ans == True:
-        with open(AUTH_LIST_PATH, 'a', encoding='utf-8', errors='replace') as dfw:
-            dfw.write(qr+"."+str(int(time.time()*1000.0)) +
-                      "."+access_identifier+"."+direction+".1."+str(ws.server_id)+"\n")
-            dfw.close()
-    return ans
+        return ans
+    except Exception as e:
+        print_logs("[Socket from "+str(ws.url) +
+                   "]:Error authorizing qr "+qr+" = "+repr(e))
+        return False
 
 
 def save_authorization(qr, ws):
-    qr_list = []
-    data = qr.split(".")
-    time = data[-4]
-    data = data[0:-4]
-    ans = False
-    access_identifier = "1"
-    with open(QR_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
-        qr_list_text = df.read().strip()
-        df.close()
-        qr_list = qr_list_text.split("\n")
-    for compare_qr in qr_list:
-        if compare_qr == "":
-            continue
-        compare_data = compare_qr.split(".")
-        if compare_data[0] == "6" and data[0] == "6" and compare_data[2] == data[2]:
-            ans = True
-            if len(compare_data) > 3:
-                access_identifier = compare_data[3]
-                qr = compare_qr
-            else:
-                access_identifier = "11"
-                qr = compare_qr+".11"
-            break
-        elif len(data) == 2 and len(compare_data) == 2 and data[1] == compare_data[0]:
-            access_identifier = "1"
-            ans = True
-            break
-        elif len(data) == 2 and len(compare_data) == 2 and data[0] == "" and data[1] == compare_data[1]:
-            data[1] = "."+compare_data[0]
-            access_identifier = "2"
-            ans = True
-            break
-        elif compare_data[0] == "3" and data[0] == "3" and ".".join(data[0:-1]) == ".".join(compare_data[0:-1]):
-            access_identifier = "1"
-            offline_list = []
-            with open(OFFLINE_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
-                offline_list_text = df.read().strip()
-                df.close()
-                if offline_list_text.strip() != "":
-                    offline_list = offline_list_text.split("\n")
-            for existent_ticket_text in offline_list:
-                if existent_ticket_text.strip() == "":
-                    continue
-                existent_ticket = json.loads(existent_ticket_text)
-                if existent_ticket["qr"] == compare_qr:
-                    if int(existent_ticket["uses"]) > 1:
-                        existent_ticket["uses"] = str(
-                            int(existent_ticket["uses"])-1)
-                        offline_position = offline_list.index(
-                            existent_ticket_text)
-                        existent_ticket_text = json.dumps(existent_ticket)
-                        offline_list[offline_position] = existent_ticket_text
-                    else:
-                        offline_list.remove(existent_ticket_text)
-                    break
-            with open(OFFLINE_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
-                dfw.write("\n".join(offline_list))
+    try:
+        qr_list = []
+        data = qr.split(".")
+        time = data[-4]
+        data = data[0:-4]
+        ans = False
+        access_identifier = "1"
+        with open(QR_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
+            qr_list_text = df.read().strip()
+            df.close()
+            qr_list = qr_list_text.split("\n")
+        for compare_qr in qr_list:
+            if compare_qr == "":
+                continue
+            compare_data = compare_qr.split(".")
+            if compare_data[0] == "6" and data[0] == "6" and compare_data[2] == data[2]:
+                ans = True
+                if len(compare_data) > 3:
+                    access_identifier = compare_data[3]
+                    qr = compare_qr
+                else:
+                    access_identifier = "11"
+                    qr = compare_qr+".11"
+                break
+            elif len(data) == 2 and len(compare_data) == 2 and data[1] == compare_data[0]:
+                access_identifier = "1"
+                ans = True
+                break
+            elif len(data) == 2 and len(compare_data) == 2 and data[0] == "" and data[1] == compare_data[1]:
+                data[1] = "."+compare_data[0]
+                access_identifier = "2"
+                ans = True
+                break
+            elif compare_data[0] == "3" and data[0] == "3" and ".".join(data[0:-1]) == ".".join(compare_data[0:-1]):
+                access_identifier = "1"
+                offline_list = []
+                with open(OFFLINE_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
+                    offline_list_text = df.read().strip()
+                    df.close()
+                    if offline_list_text.strip() != "":
+                        offline_list = offline_list_text.split("\n")
+                for existent_ticket_text in offline_list:
+                    if existent_ticket_text.strip() == "":
+                        continue
+                    existent_ticket = json.loads(existent_ticket_text)
+                    if existent_ticket["qr"] == compare_qr:
+                        if int(existent_ticket["uses"]) > 1:
+                            existent_ticket["uses"] = str(
+                                int(existent_ticket["uses"])-1)
+                            offline_position = offline_list.index(
+                                existent_ticket_text)
+                            existent_ticket_text = json.dumps(existent_ticket)
+                            offline_list[offline_position] = existent_ticket_text
+                        else:
+                            offline_list.remove(existent_ticket_text)
+                        break
+                with open(OFFLINE_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
+                    dfw.write("\n".join(offline_list))
+                    dfw.close()
+                qr_list.remove(compare_qr)
+                ans = True
+                with open(QR_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
+                    dfw.write("\n".join(qr_list))
+                    dfw.close()
+                break
+            elif compare_data[0] == "4" and ".".join(data[1:]) == ".".join(compare_data[1:]):
+                ans = True
+                break
+        if ans == True:
+            with open(AUTH_LIST_PATH, 'a', encoding='utf-8', errors='replace') as dfw:
+                dfw.write(".".join(data)+"."+time +
+                          "."+access_identifier+".0.1."+str(ws.server_id)+"\n")
                 dfw.close()
-            qr_list.remove(compare_qr)
-            ans = True
-            with open(QR_LIST_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
-                dfw.write("\n".join(qr_list))
-                dfw.close()
-            break
-        elif compare_data[0] == "4" and ".".join(data[1:]) == ".".join(compare_data[1:]):
-            ans = True
-            break
-    if ans == True:
-        with open(AUTH_LIST_PATH, 'a', encoding='utf-8', errors='replace') as dfw:
-            dfw.write(".".join(data)+"."+time +
-                      "."+access_identifier+".0.1."+str(ws.server_id)+"\n")
-            dfw.close()
-    return ans
+        return ans
+    except Exception as e:
+        print_logs("[Socket from "+str(ws.url) +
+                   "]:Error saving device authorization of qr "+qr+" = "+repr(e))
+        return False
 
 
-def create_ticket(ticket, new_ticket=True):
+def create_ticket(ticket, new_ticket=True, update_db=False):
     valid_ref_number = True
     offline_list = []
     with open(OFFLINE_LIST_PATH, 'r', encoding='utf-8', errors='replace') as df:
@@ -428,7 +456,10 @@ def create_ticket(ticket, new_ticket=True):
             if not "user_id" in ticket:
                 ticket["user_id"] = bookingOffice_id
             qrs = (ticket["qr"]+"\n")*int(ticket["uses"])
-            with open(QR_LIST_PATH, 'a', encoding='utf-8', errors='replace') as dfw:
+            db = QR_LIST_PATH
+            if update_db:
+                db = QR_LIST_UPDATED_PATH
+            with open(db, 'a', encoding='utf-8', errors='replace') as dfw:
                 dfw.write(qrs)
                 dfw.close()
             with open(OFFLINE_LIST_PATH, 'a', encoding='utf-8', errors='replace') as dfw:
@@ -489,8 +520,7 @@ def server_updater():
             credentials = log_in()
             if credentials:
                 [bookingOffice_id, login_token] = credentials
-                update_scanners = True
-                get_users()
+                update_scanners = get_users()
             else:
                 print_logs("[Master]:Desconection of internet")
                 await_time = 60
@@ -685,7 +715,7 @@ def server_http():
     log.disabled = True
     app.logger.disabled = True
     CORS(app)
-    print_logs("[Master]:Serving data in 0.0.0.0"+str(local_server_port))
+    print_logs("[Master]:Serving data in 0.0.0.0:"+str(local_server_port))
     serve(app, host="0.0.0.0", port=local_server_port)
 
 
@@ -703,6 +733,9 @@ def config_counter():
         os.makedirs(DB_DIR_NAME)
     if not os.path.exists(QR_LIST_PATH):
         open(QR_LIST_PATH, 'w', encoding='utf-8',
+             errors='replace').close()
+    if not os.path.exists(QR_LIST_UPDATED_PATH):
+        open(QR_LIST_UPDATED_PATH, 'w', encoding='utf-8',
              errors='replace').close()
     if not os.path.exists(AUTH_LIST_PATH):
         open(AUTH_LIST_PATH, 'w', encoding='utf-8',
@@ -873,7 +906,7 @@ if __name__ == "__main__":
                     socket_guardian()
 
         except Exception as e:
-            print_logs("Load Error:"+repr(e))
+            print_logs("[Master]:Load Error "+repr(e))
             with open(ACTIVE_MASTER_PATH, 'w', encoding='utf-8', errors='replace') as dfw:
                 dfw.write("")
                 dfw.close()
